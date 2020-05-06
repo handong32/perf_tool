@@ -1707,7 +1707,7 @@ static void print_counters(struct timespec *ts, int argc, const char **argv)
 	struct perf_evsel *counter;
 	char buf[64], path[200], *prefix = NULL;
 	int c, s, ret;
-        unsigned long long num;
+        unsigned long long ctime, cusage, num;
 	FILE *fptr;
 
 	char cstates[6][10] = { "POLL", //residency=0, latency=0
@@ -1775,8 +1775,11 @@ static void print_counters(struct timespec *ts, int argc, const char **argv)
 		break;
 	}
 
-	for (c = 0; c < 16; c++) {
-	  for(s = 0; s < 6; s++) {
+	for(s = 0; s < 6; s++) {
+	  ctime = 0;
+	  cusage = 0;
+	    
+	  for (c = 0; c < 16; c++) {
 	    memset (path, 0, 200);
 	    sprintf(path, "/sys/devices/system/cpu/cpu%d/cpuidle/state%d/time", c, s);	    
 	    fptr = fopen(path, "r");
@@ -1787,7 +1790,7 @@ static void print_counters(struct timespec *ts, int argc, const char **argv)
 	      exit(-1);
 	    }
 	    fclose(fptr);
-	    printf("\t %20lld \t cpu%d_%s_time \n", num, c, cstates[s]);
+	    ctime += num;	    
 	    
 	    memset (path, 0, 200);
 	    sprintf(path, "/sys/devices/system/cpu/cpu%d/cpuidle/state%d/usage", c, s);	    
@@ -1799,9 +1802,11 @@ static void print_counters(struct timespec *ts, int argc, const char **argv)
 	      exit(-1);
 	    }
 	    fclose(fptr);
+	    cusage += num;
 	    
-	    printf("\t %20lld \t cpu%d_%s_usage \n", num, c, cstates[s]);
 	  }
+	  fprintf(stat_config.output, "\t %20lld \t %s_time \n", ctime, cstates[s]);
+	  fprintf(stat_config.output,"\t %20lld \t %s_usage \n", cusage, cstates[s]);
 	}
         
 	
